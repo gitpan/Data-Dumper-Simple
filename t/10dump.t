@@ -1,8 +1,8 @@
 #!/usr/bin/perl
-# '$Id: 10dump.t,v 1.2 2004/07/31 19:29:15 ovid Exp $';
+# '$Id: 10dump.t,v 1.3 2004/07/31 22:11:32 ovid Exp $';
 use warnings;
 use strict;
-use Test::More tests => 16;
+use Test::More tests => 20;
 
 my $CLASS;
 BEGIN
@@ -99,3 +99,42 @@ is(Dumper($hash{at}), "\$hash{at} = 'least';\n",
 my $href = \%hash;
 is(Dumper($href->{at}), "\$href->{at} = 'least';\n",
     "... even if they're references");
+
+my @array2 = (
+    [qw/foo bar baz/],
+    [qw/one two three/],
+);
+
+$expected = Data::Dumper->Dump(
+    [$array2[1][2]],
+    [qw/$array2[1][2]/]
+);
+is(Dumper($array2[1][2]), $expected,
+    'Multi-dimensioanl arrays should be handled correctly');
+
+my ($w, $x) = (1,2);
+$expected = Data::Dumper->Dump(
+    [$array2[$w][$x]],
+    [qw/$array2[$w][$x]/]
+);
+is(Dumper($array2[$w][$x]), $expected,
+    '... even if the indexes are also variables');
+
+my %hash2 = (
+    first  => { this => 'that' },
+    second => { next => 1 },
+);
+$expected = Data::Dumper->Dump(
+    [$hash2{second}{next}],
+    [qw/*hash2{second}{next}/]
+);
+is( Dumper($hash2{second}{next}), $expected,
+    'Multi-level hashes should be handled correctly');
+my ($y, $z) = qw/second next/;
+
+$expected = Data::Dumper->Dump(
+    [$hash2{$y}{$z}],
+    [qw/*hash2{$y}{$z}/]
+);
+is( Dumper($hash2{$y}{$z}), $expected,
+    '... even if the indexes are variables');

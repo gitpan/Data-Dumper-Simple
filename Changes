@@ -6,3 +6,10 @@ Revision history for Perl extension Data::Dumper::Simple.
 0.02  Sat Jul 31 12:30:00 PDT 2004
     - fixed tiny bug with how scalars were represented when
       a reference to one is taken.
+
+0.03  Sat Jul 31 15:30:00 PDT 2004
+    - Changed the filter from "code" to "executable".  This
+      will sometimes mean that quoted data could be inappropriately
+      interpolated, but there appears to be an obscure bug in 
+      Filter::Simple.  Still, this is a debugging module and it
+      should not really be an issue.

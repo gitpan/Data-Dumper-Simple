@@ -1,12 +1,12 @@
 package Data::Dumper::Simple;
 
-$REVISION = '$Id: Simple.pm,v 1.4 2004/07/31 19:35:10 ovid Exp $';
-$VERSION  = '.02';
+$REVISION = '$Id: Simple.pm,v 1.6 2004/07/31 22:11:57 ovid Exp $';
+$VERSION  = '0.03';
 use Filter::Simple;
 use Data::Dumper ();
 
 FILTER_ONLY 
-    code => sub {
+    executable => sub { # not using code due to a possible bug in Filter::Simple
         s{
             Dumper\s*\(([^)]+)\)
         }{
@@ -21,16 +21,16 @@ FILTER_ONLY
 sub _munge_argument_list {
     my $arguments    = shift;
     my $sigils       = '@%&';
-    my @raw_vars     = split /\s*(?:,|=>)\s*/ => $1;
+    my @raw_vars     = split /\s*(?:,|=>)\s*/ => $arguments;
     my $escaped_vars = 
         join ', ' => 
-        map { s/\\\$/\$/g; $_ }
-        map { s/(?<!\\)(?=[$sigils])/\\/g; $_ } 
+        map { s/\\\$/\$/g; $_ } # do not take a reference to a scalar
+        map { s/(?<!\\)(?=[$sigils])/\\/g; $_ } # take references to all else
             @raw_vars;
     
     my $varnames  = 
         join ' ' => 
-        map { s/\\//g; s/[$sigils]/*/; $_ } 
+        map { s/\\//g; s/[$sigils]/*/; $_ } # turn @array into => *array
             @raw_vars;
 
     return ($escaped_vars, $varnames);
@@ -208,6 +208,11 @@ C<\\\\\\$foo>), don't do that, either.  I might use C<Text::Balanced> at some
 point to fix this if it's an issue.
 
 List and hash slices are not supported at this time.
+
+C<Dumper($foo)> can potentially interpolate if it's in a string.  This is
+because of a weird edge case with "FILTER_ONLY code" which caused a failure on
+some items being dumped.  I've fixed that, but made the module a wee bit less
+robust.
 
 Note that this is not a drop-in replacement for C<Data::Dumper>.  If you
 need the power of that module, use it.
