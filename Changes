@@ -1,0 +1,8 @@
+Revision history for Perl extension Data::Dumper::Simple.
+
+0.01  Fri Jul 30 16:29:14 PDT 2004
+	- original version; created by make_project 0.1
+
+0.02  Sat Jul 31 12:30:00 PDT 2004
+    - fixed tiny bug with how scalars were represented when
+      a reference to one is taken.
