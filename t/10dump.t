@@ -1,8 +1,8 @@
 #!/usr/bin/perl
-# '$Id: 10dump.t,v 1.5 2004/08/01 17:29:21 ovid Exp $';
+# '$Id: 10dump.t,v 1.6 2004/08/03 04:52:28 ovid Exp $';
 use warnings;
 use strict;
-use Test::More tests => 22;
+use Test::More tests => 24;
 
 my $CLASS;
 BEGIN
@@ -155,3 +155,17 @@ eval "
     # Dumper($foo);
 ";
 ok(! $@, 'Commenting out a dumper item should not throw an exception');
+
+$foo = [4, 17];
+$expected = Data::Dumper->Dump([$foo->[ 1 ]],[qw/$foo->[1]/]);
+is(Dumper($foo->[ 1 ]), $expected, 
+    'Extra whitespace in the variable should not break things');
+
+my @a = ({foo => 'bar'});
+
+# this might break in the future.  For now, it *has* to work because any
+# variable that begins with a dollar sigil will automatically be treated
+# as a scalar.  If, in the future, we incorporate slices, this might break.
+$expected = Data::Dumper->Dump([$a[0]],['$a[0]']);
+is(Dumper($a[0]), $expected,
+    'Indexing into a variable will force a reference');

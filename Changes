@@ -14,12 +14,18 @@ Revision history for Perl extension Data::Dumper::Simple.
       Filter::Simple.  Still, this is a debugging module and it
       should not really be an issue.
 
-0.04  Sat Aug 01 2004
+0.04  Sun Aug 01 2004
     - Commenting out a Dumper statement now works.
 
-0.05  Sat Aug 01 2004
+0.05  Sun Aug 01 2004
     - taking a reference to an array or hash now lists the data
       structure as a reference in the output.  Shoulda done that
       the first time.
 
       Perl Barbie says "Source filtering is *hard*"
+
+0.06  Monday Aug 2 2004
+    - Fixed variable with whitespace bug ($foo[   4   ]).
+      Added autowarning.
+      Added ability to choose own name for &Dumper (helps with
+      namespace collisions).

@@ -1,24 +1,64 @@
 package Data::Dumper::Simple;
 
-$REVISION = '$Id: Simple.pm,v 1.8 2004/08/01 17:29:55 ovid Exp $';
-$VERSION  = '0.05';
+$REVISION = '$Id: Simple.pm,v 1.9 2004/08/03 04:48:09 ovid Exp $';
+$VERSION  = '0.06';
 use Filter::Simple;
 use Data::Dumper ();
+
+my $DUMPER_FUNCTION = 'Dumper';
+my $AUTOWARN;
+
+sub import {
+    my ($class, @args) = @_;
+    @args = _validate_args(@args);
+    my %args = @args;
+    $DUMPER_FUNCTION = $args{as}       if $args{as};
+    $AUTOWARN        = $args{autowarn} if $args{autowarn};
+}
 
 FILTER_ONLY 
     executable => sub { # not using code due to a possible bug in Filter::Simple
         s{
-            Dumper\s*\(([^)]+)\)
+            $DUMPER_FUNCTION\s*\(([^)]+)\)
         }{
             my ($references, $names) = _munge_argument_list($1);
-            "Data::Dumper->Dump( [$references], [qw/$names/] )"
+            # keep it on a single line so users can comment it out
+            my $output = "Data::Dumper->Dump( [$references], [qw/$names/] )";
+            if ($AUTOWARN) {
+                $output = "$AUTOWARN($output)";
+            }
+            $output
         }gex
     };
+
+sub _validate_args {
+    my @args = @_;
+    if (@args % 2) {
+        _croak("$class->import requires an even sized list");
+    }
+    my %args = @args;
+    if ( $args{as} && ! _valid_sub_name($args{as}) ) {
+        _croak("$args{as} is not a valid name for a subroutine");
+    }
+    if ( $args{autowarn} ) {
+        $args{autowarn} = 'warn' unless _valid_sub_name($args{autowarn});
+    }
+    return %args;
+}
+
+sub _valid_sub_name { shift =~ /^[[:alpha:]][[:word:]]*$/ }
+
+sub _croak {
+    require Carp;
+    Carp::croak(shift);
+}
 
 sub _munge_argument_list {
     my $arguments     = shift;
     my $sigils        = '@%&';
-    my @raw_var_names = split /\s*(?:,|=>)\s*/ => $arguments;
+    my @raw_var_names = 
+        map { _strip_whitespace($_) }
+        split /(?:,|=>)/ => $arguments;
     my @raw_escaped   = @raw_var_names;
     my $varnames  = 
         join ' ' => 
@@ -31,6 +71,11 @@ sub _munge_argument_list {
         map { s/(?<!\\)(?=[$sigils])/\\/g; $_ } # take references to all else
             @raw_escaped;
     return ($escaped_vars, $varnames);
+}
+
+sub _strip_whitespace {
+    $_[0] =~ s/\s//g;
+    return $_[0];
 }
 
 1;
@@ -167,6 +212,31 @@ Produces:
 Note that this means similarly named variables can get quite confusing, as in
 the example above.
 
+If you already have a C<&Dumper> function, you can specify a different
+function name with the C<as> key in the import list:
+
+  use Data::Dumper::Simple as => 'display';
+  warn display( $scalar, @array, %hash );
+
+Also, if you really, really can't stand typing C<warn> or C<print>, you can
+turn on C<autodump>:
+
+  use Data::Dumper::Simple as => 'display', autodump => 1;
+  display($scalar, @array, $some->{ data });
+
+Or you can send the output (as a list) to a different function:
+
+  use Data::Dumper::Simple as => 'debug', autodump => 'to_log';
+
+  sub to_log {
+      my @data = @_;
+      # some logging function
+  }
+
+  debug(
+    $customer => @order_nums
+  ); # yeah, we support the fat comma "=>" and newlines
+
 =head1 EXPORT
 
 The only thing exported is the Dumper() function.
@@ -190,7 +260,6 @@ Filter::Simple - Simplified source filtering
 =head1 BUGS
 
 This module uses a source filter.  If you don't like that, don't use this.
-
 There are no known bugs but there probably are some as this is B<Alpha Code>.
 
 =head1 LIMITATIONS
@@ -224,6 +293,10 @@ C<Dumper($foo)> can potentially interpolate if it's in a string.  This is
 because of a weird edge case with "FILTER_ONLY code" which caused a failure on
 some items being dumped.  I've fixed that, but made the module a wee bit less
 robust.  This will hopefully be fixed in the next release of Text::Balanced.
+
+=item * The parentheses are mandatory.
+
+Sorry 'bout that.
 
 =back
 

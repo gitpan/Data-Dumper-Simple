@@ -2,6 +2,8 @@ Changes
 lib/Data/Dumper/Simple.pm
 Makefile.PL
 MANIFEST			This list of files
+META.yml			Module meta-data (added by MakeMaker)
 README
 t/10dump.t
-META.yml                                 Module meta-data (added by MakeMaker)
+t/20import.t
+t/30autowarn.t
