@@ -1,8 +1,8 @@
 #!/usr/bin/perl
-# '$Id: 10dump.t,v 1.3 2004/07/31 22:11:32 ovid Exp $';
+# '$Id: 10dump.t,v 1.5 2004/08/01 17:29:21 ovid Exp $';
 use warnings;
 use strict;
-use Test::More tests => 20;
+use Test::More tests => 22;
 
 my $CLASS;
 BEGIN
@@ -27,8 +27,9 @@ is(Dumper(\$scalar), "\$scalar = 'Ovid';\n",
     '... and dumping a scalar as a reference is a no-op');
 
 my $expected = Data::Dumper->Dump([\@array], ['*array']);
-is(Dumper(@array), $expected, '... even if they would normally flatten');
-is(Dumper(\@array), $expected, '... or if you take a reference to them');
+is(Dumper(@array), $expected, '... and arrays should not flatten');
+$expected = Data::Dumper->Dump([\@array], ['$array']);
+is(Dumper(\@array), $expected, '... but they DWIM if I take a take a reference to them');
 
 $expected = Data::Dumper->Dump(
     [$scalar, \@array, \%hash],
@@ -38,8 +39,17 @@ $expected = Data::Dumper->Dump(
 is(Dumper($scalar, @array, %hash), $expected,
     '... or have a list of them');
 
+$expected = Data::Dumper->Dump(
+    [$scalar, \@array, \%hash],
+    [qw/$scalar $array $hash/]
+);
 is(Dumper($scalar, \@array, \%hash), $expected,
     '... or a list of references');
+
+$expected = Data::Dumper->Dump(
+    [$scalar, \@array, \%hash],
+    [qw/$scalar *array *hash/]
+);
 
 is(
     Dumper(
@@ -79,11 +89,13 @@ my $foo   = { hash => 'ref' };
 my @foo   = qw/foo bar baz/;
 $expected = Data::Dumper->Dump(
     [$foo, \@foo],
-    [qw/$foo *foo/],
+    [qw/$foo $foo/],
 );
 
 is(Dumper($foo, \@foo), $expected,
      '... and a reference to a simarly named variable won\'t confuse things');
+is(Dumper(\$foo, \@foo), $expected,
+     '... even if we take references to both of them.');
 
 is(Dumper($array[2]), "\$array[2] = 'Simple';\n",
     "Indexed items in arrays are dumped intuitively.");
@@ -138,3 +150,8 @@ $expected = Data::Dumper->Dump(
 );
 is( Dumper($hash2{$y}{$z}), $expected,
     '... even if the indexes are variables');
+
+eval "
+    # Dumper($foo);
+";
+ok(! $@, 'Commenting out a dumper item should not throw an exception');

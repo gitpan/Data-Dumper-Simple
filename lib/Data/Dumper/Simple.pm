@@ -1,7 +1,7 @@
 package Data::Dumper::Simple;
 
-$REVISION = '$Id: Simple.pm,v 1.6 2004/07/31 22:11:57 ovid Exp $';
-$VERSION  = '0.03';
+$REVISION = '$Id: Simple.pm,v 1.8 2004/08/01 17:29:55 ovid Exp $';
+$VERSION  = '0.05';
 use Filter::Simple;
 use Data::Dumper ();
 
@@ -11,28 +11,25 @@ FILTER_ONLY
             Dumper\s*\(([^)]+)\)
         }{
             my ($references, $names) = _munge_argument_list($1);
-            "Data::Dumper->Dump(
-                [$references],
-                [qw/$names/]
-            )"
+            "Data::Dumper->Dump( [$references], [qw/$names/] )"
         }gex
     };
 
 sub _munge_argument_list {
-    my $arguments    = shift;
-    my $sigils       = '@%&';
-    my @raw_vars     = split /\s*(?:,|=>)\s*/ => $arguments;
+    my $arguments     = shift;
+    my $sigils        = '@%&';
+    my @raw_var_names = split /\s*(?:,|=>)\s*/ => $arguments;
+    my @raw_escaped   = @raw_var_names;
+    my $varnames  = 
+        join ' ' => 
+        map { s/(\\)?[$sigils]/$1 ? '$' : '*'/ge; s/\\//g; $_ } # turn @array into => [$*]array
+            @raw_var_names;
+
     my $escaped_vars = 
         join ', ' => 
         map { s/\\\$/\$/g; $_ } # do not take a reference to a scalar
         map { s/(?<!\\)(?=[$sigils])/\\/g; $_ } # take references to all else
-            @raw_vars;
-    
-    my $varnames  = 
-        join ' ' => 
-        map { s/\\//g; s/[$sigils]/*/; $_ } # turn @array into => *array
-            @raw_vars;
-
+            @raw_escaped;
     return ($escaped_vars, $varnames);
 }
 
@@ -47,7 +44,8 @@ Data::Dumper::Simple - Easily dump variables with names
 =head1 SYNOPSIS
 
   use Data::Dumper::Simple;
-  warn Dumper($scalar, @array, %hash);
+  warn Dumper($scalar,  @array,  %hash);
+  warn Dumper($scalar, \@array, \%hash);
 
 =head1 ABSTRACT
 
@@ -147,8 +145,9 @@ output of the above resembles this (sample data, of course):
             'at' => 'least'
           );
 
-Taking a reference to an array or hash is effectively a no-op, but a scalar
-containing a reference works as expected:
+Taking a reference to an array or hash works as expected, but taking a
+reference to a scalar is effectively a no-op (because it can turn into a
+confusing reference to a reference);
 
  my $foo   = { hash => 'ref' };
  my @foo   = qw/foo bar baz/;
@@ -159,14 +158,14 @@ Produces:
  $foo = {
    'hash' => 'ref'
  };
- @foo = (
+ $foo = [
    'foo',
    'bar',
    'baz'
- );
+ ];
 
-This is to ensure that similarly named variables are properly disambiguated in
-the output.
+Note that this means similarly named variables can get quite confusing, as in
+the example above.
 
 =head1 EXPORT
 
@@ -188,13 +187,19 @@ Filter::Simple - Simplified source filtering
 
 =back
 
-=head1 BUGS AND CAVEATS
+=head1 BUGS
 
 This module uses a source filter.  If you don't like that, don't use this.
 
 There are no known bugs but there probably are some as this is B<Alpha Code>.
-As for limitations, do not try to call C<Dumper()> with a subroutine in the
-argument list:
+
+=head1 LIMITATIONS
+
+=over 4
+
+=item * Calling with a sub
+
+Do not try to call C<Dumper()> with a subroutine in the argument list:
 
   Dumper($foo, some_sub()); # Bad!
 
@@ -203,16 +208,24 @@ but it became apparent that there was no way that C<Dumper()> could figure out
 how to name the return values from the subroutines, thus ensuring further
 breakage.  So don't do that.
 
+=item * Multiple enreferencing
+
 Getting really crazy by using multiple enreferencing will confuse things (e.g.,
 C<\\\\\\$foo>), don't do that, either.  I might use C<Text::Balanced> at some
 point to fix this if it's an issue.
 
+=item * Slices
+
 List and hash slices are not supported at this time.
+
+=item * String interpolation
 
 C<Dumper($foo)> can potentially interpolate if it's in a string.  This is
 because of a weird edge case with "FILTER_ONLY code" which caused a failure on
 some items being dumped.  I've fixed that, but made the module a wee bit less
-robust.
+robust.  This will hopefully be fixed in the next release of Text::Balanced.
+
+=back
 
 Note that this is not a drop-in replacement for C<Data::Dumper>.  If you
 need the power of that module, use it.
