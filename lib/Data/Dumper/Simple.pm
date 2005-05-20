@@ -1,12 +1,29 @@
 package Data::Dumper::Simple;
 
-$REVISION = '$Id: Simple.pm,v 1.9 2004/08/03 04:48:09 ovid Exp $';
-$VERSION  = '0.06';
+$REVISION = '$Id: Simple.pm,v 1.10 2005/05/20 01:37:08 ovid Exp $';
+$VERSION  = '0.07';
 use Filter::Simple;
 use Data::Dumper ();
 
 my $DUMPER_FUNCTION = 'Dumper';
 my $AUTOWARN;
+
+my $COMMA = qr/(?:,|=>)/;
+my $ATOM  = qr/(?!\d)[[:word:]]+/;
+my $SEP   = qr/::/;
+my $NAME  = qr/$SEP?$ATOM(?:$SEP$ATOM)*/;
+
+my $SCALAR     = qr/\$$NAME/;
+my $ARRAY_ELEM = qr/\$$NAME\[[^]]+\]/;
+my $ARRAY      = qr/\@$NAME/;
+my $HASH_ELEM  = qr/\$$NAME\{[^}]+\}/;
+my $HASH       = qr/\%$NAME/;
+
+my $VAR        = qr/(?:$ARRAY|$HASH|$ARRAY_ELEM|$HASH_ELEM|$SCALAR)/;
+my $END_STMT   = qr/(?=\s*[;}])/;
+
+my $ARG_LIST   = qr/$VAR(?:\s*$COMMA\s*$VAR)*$END_STMT/;
+my $PAREN_LIST = qr/\([^)]+\)/;
 
 sub import {
     my ($class, @args) = @_;
@@ -19,15 +36,17 @@ sub import {
 FILTER_ONLY 
     executable => sub { # not using code due to a possible bug in Filter::Simple
         s{
-            $DUMPER_FUNCTION\s*\(([^)]+)\)
+            $DUMPER_FUNCTION\s*($PAREN_LIST|$ARG_LIST)
         }{
-            my ($references, $names) = _munge_argument_list($1);
+            my $args = $1;
+            $args =~ s/^\((.*)\)$/$1/s;        # strip parens, if any
+            my ($references, $names) = _munge_argument_list($args);
             # keep it on a single line so users can comment it out
             my $output = "Data::Dumper->Dump( [$references], [qw/$names/] )";
             if ($AUTOWARN) {
                 $output = "$AUTOWARN($output)";
             }
-            $output
+            "($output)"; # parens prevent accidental indirect method syntax
         }gex
     };
 
@@ -91,6 +110,7 @@ Data::Dumper::Simple - Easily dump variables with names
   use Data::Dumper::Simple;
   warn Dumper($scalar,  @array,  %hash);
   warn Dumper($scalar, \@array, \%hash);
+  warn Dumper $scalar, @array, %hash;
 
 =head1 ABSTRACT
 
@@ -294,9 +314,21 @@ because of a weird edge case with "FILTER_ONLY code" which caused a failure on
 some items being dumped.  I've fixed that, but made the module a wee bit less
 robust.  This will hopefully be fixed in the next release of Text::Balanced.
 
-=item * The parentheses are mandatory.
+=item * Line numbers may be wrong
 
-Sorry 'bout that.
+Because this module uses a source filter, line numbers reported from
+syntax or other errors may be thrown off a little. 
+
+This is probably a bug in the source filter implementation, which should
+use C<#line> directives. As a workaround until this is fixed, put a
+directive (such as C<#line 10000>) a few lines ahead of the suspected
+bug. If the error is reported as happening in line 10007, you know to
+look about eight lines below your directive for the bug. Be sure to
+remove the bogus directive once you find the bug!
+
+=item * The parentheses are optional, but the syntax isn't bulletproof
+
+If you try, it's not hard to confuse the parser. Patches welcome.
 
 =back
 

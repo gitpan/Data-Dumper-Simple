@@ -7,3 +7,4 @@ README
 t/10dump.t
 t/20import.t
 t/30autowarn.t
+t/40noparens.t
