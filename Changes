@@ -1,5 +1,12 @@
 Revision history for Perl extension Data::Dumper::Simple.
 
+0.10  2005-10-08
+    - Added POD tests.
+    - Converted to Module::Build
+    - Fixed tiny bug where import list error wasn't getting
+      reported correctly (because I was missing 'strict'.  Fancy
+      that).
+
 0.07  Thu May 19 2005
     - Implemented patch from Tom Phoenix that makes parentheses
       optional (and a doc fix, too).

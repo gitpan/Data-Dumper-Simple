@@ -1,11 +1,17 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Data-Dumper-Simple
-version:      0.07
-version_from: lib/Data/Dumper/Simple.pm
-installdirs:  site
+---
+name: Data-Dumper-Simple
+version: 0.10
+author:
+  - Curtis "Ovid" Poe <ovid@cpan.org>
+abstract: Easily dump variables with names
+license: perl
+resources:
+  license: http://dev.perl.org/licenses/
 requires:
-    Filter::Simple:                0.77
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.17
+  Filter::Simple: 0.77
+  Test::More: 0
+provides:
+  Data::Dumper::Simple:
+    file: lib/Data/Dumper/Simple.pm
+    version: 0.10
+generated_by: Module::Build version 0.2702

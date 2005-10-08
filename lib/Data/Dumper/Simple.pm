@@ -1,17 +1,18 @@
 package Data::Dumper::Simple;
 
 $REVISION = '$Id: Simple.pm,v 1.10 2005/05/20 01:37:08 ovid Exp $';
-$VERSION  = '0.07';
+$VERSION  = '0.10';
 use Filter::Simple;
 use Data::Dumper ();
+use strict;
 
 my $DUMPER_FUNCTION = 'Dumper';
 my $AUTOWARN;
 
-my $COMMA = qr/(?:,|=>)/;
-my $ATOM  = qr/(?!\d)[[:word:]]+/;
-my $SEP   = qr/::/;
-my $NAME  = qr/$SEP?$ATOM(?:$SEP$ATOM)*/;
+my $COMMA      = qr/(?:,|=>)/;
+my $ATOM       = qr/(?!\d)[[:word:]]+/;
+my $SEP        = qr/::/;
+my $NAME       = qr/$SEP?$ATOM(?:$SEP$ATOM)*/;
 
 my $SCALAR     = qr/\$$NAME/;
 my $ARRAY_ELEM = qr/\$$NAME\[[^]]+\]/;
@@ -26,16 +27,16 @@ my $ARG_LIST   = qr/$VAR(?:\s*$COMMA\s*$VAR)*$END_STMT/;
 my $PAREN_LIST = qr/\([^)]+\)/;
 
 sub import {
-    my ($class, @args) = @_;
-    @args = _validate_args(@args);
+    my ( $class, @args ) = @_;
+    @args = $class->_validate_args(@args);
     my %args = @args;
     $DUMPER_FUNCTION = $args{as}       if $args{as};
     $AUTOWARN        = $args{autowarn} if $args{autowarn};
 }
 
-FILTER_ONLY 
-    executable => sub { # not using code due to a possible bug in Filter::Simple
-        s{
+FILTER_ONLY executable =>
+  sub {    # not using code due to a possible bug in Filter::Simple
+    s{
             $DUMPER_FUNCTION\s*($PAREN_LIST|$ARG_LIST)
         }{
             my $args = $1;
@@ -48,19 +49,19 @@ FILTER_ONLY
             }
             "($output)"; # parens prevent accidental indirect method syntax
         }gex
-    };
+  };
 
 sub _validate_args {
-    my @args = @_;
-    if (@args % 2) {
+    my ( $class, @args ) = @_;
+    if ( @args % 2 ) {
         _croak("$class->import requires an even sized list");
     }
     my %args = @args;
-    if ( $args{as} && ! _valid_sub_name($args{as}) ) {
+    if ( $args{as} && !_valid_sub_name( $args{as} ) ) {
         _croak("$args{as} is not a valid name for a subroutine");
     }
     if ( $args{autowarn} ) {
-        $args{autowarn} = 'warn' unless _valid_sub_name($args{autowarn});
+        $args{autowarn} = 'warn' unless _valid_sub_name( $args{autowarn} );
     }
     return %args;
 }
@@ -75,21 +76,22 @@ sub _croak {
 sub _munge_argument_list {
     my $arguments     = shift;
     my $sigils        = '@%&';
-    my @raw_var_names = 
-        map { _strip_whitespace($_) }
-        split /(?:,|=>)/ => $arguments;
-    my @raw_escaped   = @raw_var_names;
-    my $varnames  = 
-        join ' ' => 
-        map { s/(\\)?[$sigils]/$1 ? '$' : '*'/ge; s/\\//g; $_ } # turn @array into => [$*]array
-            @raw_var_names;
+    my @raw_var_names =
+      map { _strip_whitespace($_) }
+      split /(?:,|=>)/ => $arguments;
+    my @raw_escaped = @raw_var_names;
+    my $varnames = join ' ' => map {
+        s/(\\)?[$sigils]/$1 ? '$' : '*'/ge;
+        s/\\//g;
+        $_
+      }    # turn @array into => [$*]array
+      @raw_var_names;
 
-    my $escaped_vars = 
-        join ', ' => 
-        map { s/\\\$/\$/g; $_ } # do not take a reference to a scalar
-        map { s/(?<!\\)(?=[$sigils])/\\/g; $_ } # take references to all else
-            @raw_escaped;
-    return ($escaped_vars, $varnames);
+    my $escaped_vars =
+      join ', ' => map { s/\\\$/\$/g; $_ } # do not take a reference to a scalar
+      map { s/(?<!\\)(?=[$sigils])/\\/g; $_ }    # take references to all else
+      @raw_escaped;
+    return ( $escaped_vars, $varnames );
 }
 
 sub _strip_whitespace {
@@ -130,6 +132,12 @@ dumping variables for debugging a trivial task.
 
 Note that this is primarily a debugging tool.  C<Data::Dumper> offers a bit
 more than that, so don't expect this module to be more than it is.
+
+Note that if you strongly object to source filters, I've also released
+L<Data::Dumper::Names>.  It does what this module does by it uses L<PadWalker>
+instead of a source filter.  Unfortunately, it has a few limitations and is not
+as powerful as this module.  Think of L<Data::Dumper::Names> as a "proof of
+concept".
 
 =head2 The Problem
 

@@ -1,3 +1,4 @@
+Build.PL
 Changes
 lib/Data/Dumper/Simple.pm
 Makefile.PL
@@ -8,3 +9,5 @@ t/10dump.t
 t/20import.t
 t/30autowarn.t
 t/40noparens.t
+t/pod-coverage.t
+t/pod.t
