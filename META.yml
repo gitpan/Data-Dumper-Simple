@@ -1,6 +1,6 @@
 ---
 name: Data-Dumper-Simple
-version: 0.10
+version: 0.11
 author:
   - Curtis "Ovid" Poe <ovid@cpan.org>
 abstract: Easily dump variables with names
@@ -13,5 +13,8 @@ requires:
 provides:
   Data::Dumper::Simple:
     file: lib/Data/Dumper/Simple.pm
-    version: 0.10
-generated_by: Module::Build version 0.2702
+    version: 0.11
+generated_by: Module::Build version 0.2703
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2

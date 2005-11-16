@@ -1,7 +1,7 @@
 package Data::Dumper::Simple;
 
 $REVISION = '$Id: Simple.pm,v 1.10 2005/05/20 01:37:08 ovid Exp $';
-$VERSION  = '0.10';
+$VERSION  = '0.11';
 use Filter::Simple;
 use Data::Dumper ();
 use strict;
@@ -247,14 +247,14 @@ function name with the C<as> key in the import list:
   warn display( $scalar, @array, %hash );
 
 Also, if you really, really can't stand typing C<warn> or C<print>, you can
-turn on C<autodump>:
+turn on C<autowarn>:
 
-  use Data::Dumper::Simple as => 'display', autodump => 1;
+  use Data::Dumper::Simple as => 'display', autowarn => 1;
   display($scalar, @array, $some->{ data });
 
 Or you can send the output (as a list) to a different function:
 
-  use Data::Dumper::Simple as => 'debug', autodump => 'to_log';
+  use Data::Dumper::Simple as => 'debug', autowarn => 'to_log';
 
   sub to_log {
       my @data = @_;
